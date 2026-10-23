@@ -1,0 +1,62 @@
+# ==========================================================
+#  ZAREN — تنظیمات Apache برای cPanel
+#  این فایل باید کنار index.html داخل public_html باشد.
+#  (در cPanel فایل‌هایی که با نقطه شروع می‌شوند مخفی‌اند؛
+#   در File Manager گزینه Show Hidden Files را فعال کنید.)
+# ==========================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ۱) هدایت همیشگی به HTTPS (پس از فعال شدن SSL روی دامنه)
+  #    شرط دوم برای هاست‌هایی است که SSL را روی پروکسی/Cloudflare انجام می‌دهند.
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # ۲) مسیریابی صفحات داخلی (مثل /products یا /product/sample-01)
+  #    اگر فایل یا پوشه واقعی وجود دارد، همان را نشان بده
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  #    فایل‌های دارای پسوند (عکس، موسیقی، js و ...) که وجود ندارند، 404 واقعی بگیرند
+  RewriteCond %{REQUEST_URI} \.[A-Za-z0-9]{2,5}$
+  RewriteRule ^ - [L]
+
+  #    بقیه مسیرها به index.html برود تا React مسیر را مدیریت کند
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# فشرده‌سازی برای سرعت بیشتر
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+
+# کش مرورگر: فایل‌های پوشه assets نام یکتا دارند و می‌توانند طولانی کش شوند
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType audio/mpeg "access plus 1 month"
+</IfModule>
+
+# هدرهای امنیتی ساده
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# نوع فایل‌ها (در صورتی که هاست تنظیم نکرده باشد)
+<IfModule mod_mime.c>
+  AddType font/woff2 .woff2
+  AddType audio/mpeg .mp3
+</IfModule>
